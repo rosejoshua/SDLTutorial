@@ -1,43 +1,88 @@
+// On linux compile with:
+// g++ -std=c++17 main.cpp -o prog -lSDL2 -ldl
+// On windows compile with (if using mingw)
+// g++ main.cpp -o prog.exe -lmingw32 -lSDL2main -lSDL2
+
+// C++ Standard Libraries
 #include <iostream>
+// Third Party
 #include <SDL2/SDL.h>
 
-int main(int argc, char* argv[]) {
-	
-	//create a window data type
-	SDL_Window* window = nullptr;
+void setPixel(SDL_Surface* surface, int x, int y, uint8_t r, uint8_t g, uint8_t b){
+	SDL_LockSurface(surface);
+	std::cout << "mouse was pressed (" << x << "," << y << ")\n";
+	uint8_t* pixelArray = (uint8_t*)surface->pixels;
+	pixelArray[y*surface->pitch +x*surface->format->BytesPerPixel] = g;	
+	pixelArray[y*surface->pitch +x*surface->format->BytesPerPixel +1] = b;
+	pixelArray[y*surface->pitch +x*surface->format->BytesPerPixel +2] = r;
 
-	if(SDL_Init(SDL_INIT_VIDEO) <0 ) {
-		std::cout << "SDL could not be initialized: " <<
-			SDL_GetError();
-	}else {
-		std::cout << "SDL video system is ready to go\n";
-	
-	window = SDL_CreateWindow("C++ SDL2 Window",
-			0,
-			0,
-			640,
-			480,
-			SDL_WINDOW_SHOWN);
+	SDL_UnlockSurface(surface);
+}
 
-	//infinite loop for app
-	bool gameIsRunning = true;
+int main(int argc, char* argv[]){
+    // Create a window data type
+    // This pointer will point to the 
+    // window that is allocated from SDL_CreateWindow
+    SDL_Window* window=nullptr;
 
-	while(gameIsRunning) {
-	
-		SDL_Event event;
-		//start our event loop
-		while(SDL_PollEvent(&event)){
-			//handle each specific event
-			if(event.type == SDL_QUIT){
-				gameIsRunning = false;
-			}
-		}
-	}
+    // Grab the window surface.
+    SDL_Surface* screen;
 
-	SDL_DestroyWindow(window);
+    // Initialize the video subsystem.
+    // iF it returns less than 1, then an
+    // error code will be received.
+    if(SDL_Init(SDL_INIT_VIDEO) < 0){
+        std::cout << "SDL could not be initialized: " <<
+                  SDL_GetError();
+    }else{
+        std::cout << "SDL video system is ready to go\n";
+    }
+    // Request a window to be created for our platform
+    // The parameters are for the title, x and y position,
+    // and the width and height of the window.
+    window = SDL_CreateWindow("C++ SDL2 Window",
+            20,
+            20,
+            640,
+            480,
+            SDL_WINDOW_SHOWN);
 
-	SDL_Quit();
+    screen = SDL_GetWindowSurface(window);
 
-	return 0;
-	}
+    // Infinite loop for our application
+    bool gameIsRunning = true;
+    // Main application loop
+    while(gameIsRunning){
+        SDL_Event event;
+
+	int x,y;
+	Uint32 buttons;
+	buttons = SDL_GetMouseState(&x, &y);
+
+        // Start our event loop
+        while(SDL_PollEvent(&event)){
+            // Handle each specific event
+            if(event.type == SDL_QUIT){
+		    gameIsRunning= false;
+            }
+            if(event.button.button == SDL_BUTTON_LEFT){
+		    setPixel(screen, x, y, 255, 0, 0);
+	    }	    
+            if(event.button.button == SDL_BUTTON_RIGHT){
+		    setPixel(screen, x, y, 0, 255, 0);
+	    }
+	   
+	    SDL_UpdateWindowSurface(window);
+        }
+    }
+
+    // We destroy our window. We are passing in the pointer
+    // that points to the memory allocated by the 
+    // 'SDL_CreateWindow' function. Remember, this is
+    // a 'C-style' API, we don't have destructors.
+    SDL_DestroyWindow(window);
+    
+    // our program.
+    SDL_Quit();
+    return 0;
 }
